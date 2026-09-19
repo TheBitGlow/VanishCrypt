@@ -36,11 +36,12 @@ To defend against offline GPU/ASIC brute-force dictionary attacks, VanishCrypt e
 | :--- | :--- |
 | 🔐 **AES-256-GCM AEAD Encryption** | Military-grade authenticated encryption guaranteeing both confidentiality and integrity with a 128-bit authentication tag. |
 | 🛡️ **Hardened Argon2id KDF** | Memory-hard key derivation (`time_cost=12`, `memory_cost=1GB`, `parallelism=8`) designed to neutralize GPU, FPGA, and ASIC cracking clusters. |
-| 🗑️ **SSD-Optimized Secure Wipe** | Detaches filename directory references → overwrites original contents with random-key AES ciphertext stream → unlinks dual temporary artifacts. |
-| 📁 **Batch & Recursive Folders** | Select individual files or drag-and-drop entire folders. Automatically walks directory trees and computes SHA-256 fingerprints. |
-| 🖱️ **Drag-and-Drop Workflow** | Effortlessly drag single files, batches, or folders directly into the application window. |
-| 🔑 **Enforced Password Policy** | Strictly mandates $\ge 12$ characters containing uppercase, lowercase, numbers, and symbols, with a real-time reactive strength meter. |
-| 🛡️ **Fail-Safe Double Confirmation** | Password confirmation field during encryption and mandatory modal alerts to guard against accidental shredding. |
+| 🗑️ **SSD-Optimized In-Place Wipe** | Path detachment → `r+b` in-place pseudo-random stream overwrite → `fsync` physical disk flush → secondary randomized rename & shred. Optional shredding toggle. |
+| 📋 **Interactive Multi-File Queue** | Clean table interface presenting file names, sizes, statuses, and individual removal actions; duplicate filtering and one-click clear. |
+| 📁 **Dedicated Folders & Batch Recursion** | Separate "Add Files" and "Add Folder" buttons; walks directory trees and calculates file-level SHA-256 fingerprints. |
+| 🎲 **Built-in Strong Password Generator** | Generates 16-character high-entropy passwords with automatic clipboard copy; includes real-time CapsLock detection warnings. |
+| 📊 **Dual Progress & Speed / ETA** | Fine-grained split tracking for both "Current File" and "Total Batch", with real-time throughput metrics (MB/s) and estimated time remaining (ETA). |
+| 💾 **Pre-Flight Disk Space Verification** | Automatically checks target storage volume capacity with safety buffer margins before operations begin, preventing low-disk crashes. |
 | ⚡ **Async Multi-Threading & Safe Cancel** | Decoupled UI and worker threads (`QThread`). Cooperative `QMutex` thread-safe cancellation enables instant abort without leaving corrupted files. |
 | 🔄 **Self-Describing V5 Format & V4 Back-Compat** | `SECv5` embeds KDF parameters inside the header for future cryptographic agility, while seamlessly decrypting legacy `SECv4` containers. |
 | 🔒 **Memory & Permission Hardening** | Encryption keys reside in mutable `bytearray` buffers wiped with zeroes immediately after use. Output files are restricted to permissions `0o600`. |
@@ -65,8 +66,9 @@ To defend against offline GPU/ASIC brute-force dictionary attacks, VanishCrypt e
 ### 4. SSD Secure Shredding & Threat Model
 - **Wiping Workflow**:
   1. `os.replace(file_path, tmp_src)`: Atomically breaks the original file inode/directory link.
-  2. A fresh, ephemeral 256-bit key and 96-bit nonce are generated. The source is read in 16 MB chunks, encrypted with AES-GCM, and written to `tmp_enc`.
-  3. Both `tmp_src` and `tmp_enc` are removed from the filesystem.
+  2. The temporary file `tmp_src` is opened in `r+b` mode and overwritten in-place with cryptographically random byte streams.
+  3. `f.flush()` and `os.fsync(fileno)` force the operating system to flush kernel page buffers down to physical NAND flash.
+  4. The file is renamed a second time to an ephemeral token `tmp_dst` to scrub metadata traces, then unlinked via `os.remove()`.
 - **Physical Limitations of Flash Storage**:
   > [!WARNING]
   > Solid-state drives (SSDs) utilize wear-leveling algorithms and Flash Translation Layers (FTL). Software-level overwriting cannot guarantee that every physical NAND flash block is updated in place. For maximum protection in hostile threat environments, use VanishCrypt in conjunction with Full Disk Encryption (such as BitLocker, LUKS, or FileVault).
