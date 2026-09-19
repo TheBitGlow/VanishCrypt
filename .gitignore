@@ -1,1 +1,31 @@
-__pycache__/、*.pyc、.venv/、.env
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# Virtual environments
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
